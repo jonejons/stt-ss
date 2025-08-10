@@ -12,4 +12,3 @@ import { LoggerModule } from '../../core/logger/logger.module';
   exports: [AuditLogService, AuditLogRepository],
 })
 export class AuditModule {}
-"

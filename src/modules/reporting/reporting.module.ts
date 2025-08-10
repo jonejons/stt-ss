@@ -29,4 +29,3 @@ import { AuditModule } from '../audit/audit.module';
   exports: [ReportingService, ReportRepository],
 })
 export class ReportingModule {}
-"

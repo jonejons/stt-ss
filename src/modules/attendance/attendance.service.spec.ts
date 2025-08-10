@@ -165,4 +165,195 @@ describe('AttendanceService', () => {
 
   describe('getAttendanceSummary', () => {
     it('should calculate attendance summary correctly', async () => {
-      const checkInRecord = {\n        ...mockAttendanceRecord,\n        eventType: 'CHECK_IN',\n        timestamp: new Date('2024-01-15T09:00:00Z'),\n      };\n      const checkOutRecord = {\n        ...mockAttendanceRecord,\n        id: 'attendance-124',\n        eventType: 'CHECK_OUT',\n        timestamp: new Date('2024-01-15T17:00:00Z'),\n      };\n\n      attendanceRepository.findMany.mockResolvedValue([checkInRecord, checkOutRecord] as any);\n\n      const result = await service.getAttendanceSummary(\n        'emp-123',\n        new Date('2024-01-01'),\n        new Date('2024-01-31'),\n        mockDataScope,\n      );\n\n      expect(result.employeeId).toBe('emp-123');\n      expect(result.totalHours).toBe(8);\n      expect(result.presentDays).toBe(1);\n      expect(result.dailySummary).toHaveLength(1);\n      expect(result.dailySummary[0].status).toBe('present');\n      expect(result.dailySummary[0].totalHours).toBe(8);\n    });\n\n    it('should handle partial days (check-in without check-out)', async () => {\n      const checkInRecord = {\n        ...mockAttendanceRecord,\n        eventType: 'CHECK_IN',\n        timestamp: new Date('2024-01-15T09:00:00Z'),\n      };\n\n      attendanceRepository.findMany.mockResolvedValue([checkInRecord] as any);\n\n      const result = await service.getAttendanceSummary(\n        'emp-123',\n        new Date('2024-01-01'),\n        new Date('2024-01-31'),\n        mockDataScope,\n      );\n\n      expect(result.partialDays).toBe(1);\n      expect(result.presentDays).toBe(0);\n      expect(result.dailySummary[0].status).toBe('partial');\n    });\n  });\n\n  describe('deleteAttendanceRecord', () => {\n    it('should delete attendance record successfully', async () => {\n      attendanceRepository.findById.mockResolvedValue(mockAttendanceRecord as any);\n      attendanceRepository.delete.mockResolvedValue(undefined);\n\n      await service.deleteAttendanceRecord('attendance-123', mockDataScope);\n\n      expect(attendanceRepository.findById).toHaveBeenCalledWith('attendance-123', mockDataScope);\n      expect(attendanceRepository.delete).toHaveBeenCalledWith('attendance-123', mockDataScope);\n      expect(loggerService.log).toHaveBeenCalledWith('Attendance record deleted', expect.any(Object));\n    });\n\n    it('should throw NotFoundException when record not found', async () => {\n      attendanceRepository.findById.mockResolvedValue(null);\n\n      await expect(service.deleteAttendanceRecord('attendance-123', mockDataScope)).rejects.toThrow(NotFoundException);\n    });\n  });\n\n  describe('getAttendanceStats', () => {\n    it('should return attendance statistics', async () => {\n      const mockStats = {\n        totalRecords: 100,\n        eventsByType: [\n          { eventType: 'CHECK_IN', count: 50 },\n          { eventType: 'CHECK_OUT', count: 50 },\n        ],\n        recordsByEmployee: [\n          { employeeId: 'emp-123', employeeName: 'John Doe (EMP001)', count: 20 },\n        ],\n      };\n\n      attendanceRepository.getAttendanceStats.mockResolvedValue(mockStats);\n\n      const result = await service.getAttendanceStats({}, mockDataScope);\n\n      expect(attendanceRepository.getAttendanceStats).toHaveBeenCalledWith({}, mockDataScope);\n      expect(result).toEqual(mockStats);\n    });\n  });\n\n  describe('getDailyAttendanceReport', () => {\n    it('should generate daily attendance report', async () => {\n      const date = new Date('2024-01-15');\n      const checkInRecord = {\n        ...mockAttendanceRecord,\n        eventType: 'CHECK_IN',\n        timestamp: new Date('2024-01-15T09:00:00Z'),\n      };\n      const checkOutRecord = {\n        ...mockAttendanceRecord,\n        id: 'attendance-124',\n        eventType: 'CHECK_OUT',\n        timestamp: new Date('2024-01-15T17:00:00Z'),\n      };\n\n      attendanceRepository.findMany.mockResolvedValue([checkInRecord, checkOutRecord] as any);\n\n      const result = await service.getDailyAttendanceReport(date, 'branch-123', mockDataScope);\n\n      expect(result.date).toEqual(date);\n      expect(result.branchId).toBe('branch-123');\n      expect(result.totalEmployees).toBe(1);\n      expect(result.presentEmployees).toBe(1);\n      expect(result.employeeDetails).toHaveLength(1);\n      expect(result.employeeDetails[0].status).toBe('present');\n      expect(result.employeeDetails[0].totalHours).toBe(8);\n    });\n\n    it('should handle employees with only check-in', async () => {\n      const date = new Date('2024-01-15');\n      const checkInRecord = {\n        ...mockAttendanceRecord,\n        eventType: 'CHECK_IN',\n        timestamp: new Date('2024-01-15T09:00:00Z'),\n      };\n\n      attendanceRepository.findMany.mockResolvedValue([checkInRecord] as any);\n\n      const result = await service.getDailyAttendanceReport(date, 'branch-123', mockDataScope);\n\n      expect(result.partialEmployees).toBe(1);\n      expect(result.employeeDetails[0].status).toBe('partial');\n    });\n  });\n\n  describe('getWeeklyAttendanceReport', () => {\n    it('should generate weekly attendance report', async () => {\n      const startDate = new Date('2024-01-15');\n      \n      // Mock the getDailyAttendanceReport method\n      jest.spyOn(service, 'getDailyAttendanceReport').mockResolvedValue({\n        date: new Date('2024-01-15'),\n        branchId: 'branch-123',\n        totalEmployees: 10,\n        presentEmployees: 8,\n        partialEmployees: 1,\n        absentEmployees: 1,\n        totalHours: 64,\n        averageHours: 8,\n        employeeDetails: [],\n      });\n\n      const result = await service.getWeeklyAttendanceReport(startDate, 'branch-123', mockDataScope);\n\n      expect(result.startDate).toEqual(startDate);\n      expect(result.branchId).toBe('branch-123');\n      expect(result.dailyReports).toHaveLength(7);\n      expect(result.totalHours).toBeGreaterThan(0);\n    });\n  });\n\n  describe('getMonthlyAttendanceReport', () => {\n    it('should generate monthly attendance report', async () => {\n      const year = 2024;\n      const month = 1;\n      const attendanceRecords = [\n        {\n          ...mockAttendanceRecord,\n          timestamp: new Date('2024-01-15T09:00:00Z'),\n        },\n        {\n          ...mockAttendanceRecord,\n          id: 'attendance-124',\n          timestamp: new Date('2024-01-16T09:00:00Z'),\n        },\n      ];\n\n      attendanceRepository.findMany.mockResolvedValue(attendanceRecords as any);\n\n      const result = await service.getMonthlyAttendanceReport(year, month, 'branch-123', mockDataScope);\n\n      expect(result.year).toBe(year);\n      expect(result.month).toBe(month);\n      expect(result.branchId).toBe('branch-123');\n      expect(result.totalEmployees).toBe(1);\n      expect(result.employeeReports).toHaveLength(1);\n    });\n  });\n});"
+
+      const checkInRecord = {
+        ...mockAttendanceRecord,
+        eventType: 'CHECK_IN',
+        timestamp: new Date('2024-01-15T09:00:00Z'),
+      };
+      const checkOutRecord = {
+        ...mockAttendanceRecord,
+        id: 'attendance-124',
+        eventType: 'CHECK_OUT',
+        timestamp: new Date('2024-01-15T17:00:00Z'),
+      };
+
+      attendanceRepository.findMany.mockResolvedValue([checkInRecord, checkOutRecord] as any);
+
+      const result = await service.getAttendanceSummary(
+        'emp-123',
+        new Date('2024-01-01'),
+        new Date('2024-01-31'),
+        mockDataScope,
+      );
+
+      expect(result.employeeId).toBe('emp-123');
+      expect(result.totalHours).toBe(8);
+      expect(result.presentDays).toBe(1);
+      expect(result.dailySummary).toHaveLength(1);
+      expect(result.dailySummary[0].status).toBe('present');
+      expect(result.dailySummary[0].totalHours).toBe(8);
+    });
+
+    it('should handle partial days (check-in without check-out)', async () => {
+      const checkInRecord = {
+        ...mockAttendanceRecord,
+        eventType: 'CHECK_IN',
+        timestamp: new Date('2024-01-15T09:00:00Z'),
+      };
+
+      attendanceRepository.findMany.mockResolvedValue([checkInRecord] as any);
+
+      const result = await service.getAttendanceSummary(
+        'emp-123',
+        new Date('2024-01-01'),
+        new Date('2024-01-31'),
+        mockDataScope,
+      );
+
+      expect(result.partialDays).toBe(1);
+      expect(result.presentDays).toBe(0);
+      expect(result.dailySummary[0].status).toBe('partial');
+    });
+  });
+
+  describe('deleteAttendanceRecord', () => {
+    it('should delete attendance record successfully', async () => {
+      attendanceRepository.findById.mockResolvedValue(mockAttendanceRecord as any);
+      attendanceRepository.delete.mockResolvedValue(undefined);
+
+      await service.deleteAttendanceRecord('attendance-123', mockDataScope);
+
+      expect(attendanceRepository.findById).toHaveBeenCalledWith('attendance-123', mockDataScope);
+      expect(attendanceRepository.delete).toHaveBeenCalledWith('attendance-123', mockDataScope);
+      expect(loggerService.log).toHaveBeenCalledWith('Attendance record deleted', expect.any(Object));
+    });
+
+    it('should throw NotFoundException when record not found', async () => {
+      attendanceRepository.findById.mockResolvedValue(null);
+
+      await expect(service.deleteAttendanceRecord('attendance-123', mockDataScope)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getAttendanceStats', () => {
+    it('should return attendance statistics', async () => {
+      const mockStats = {
+        totalRecords: 100,
+        eventsByType: [
+          { eventType: 'CHECK_IN', count: 50 },
+          { eventType: 'CHECK_OUT', count: 50 },
+        ],
+        recordsByEmployee: [
+          { employeeId: 'emp-123', employeeName: 'John Doe (EMP001)', count: 20 },
+        ],
+      };
+
+      attendanceRepository.getAttendanceStats.mockResolvedValue(mockStats);
+
+      const result = await service.getAttendanceStats({}, mockDataScope);
+
+      expect(attendanceRepository.getAttendanceStats).toHaveBeenCalledWith({}, mockDataScope);
+      expect(result).toEqual(mockStats);
+    });
+  });
+
+  describe('getDailyAttendanceReport', () => {
+    it('should generate daily attendance report', async () => {
+      const date = new Date('2024-01-15');
+      const checkInRecord = {
+        ...mockAttendanceRecord,
+        eventType: 'CHECK_IN',
+        timestamp: new Date('2024-01-15T09:00:00Z'),
+      };
+      const checkOutRecord = {
+        ...mockAttendanceRecord,
+        id: 'attendance-124',
+        eventType: 'CHECK_OUT',
+        timestamp: new Date('2024-01-15T17:00:00Z'),
+      };
+
+      attendanceRepository.findMany.mockResolvedValue([checkInRecord, checkOutRecord] as any);
+
+      const result = await service.getDailyAttendanceReport(date, 'branch-123', mockDataScope);
+
+      expect(result.date).toEqual(date);
+      expect(result.branchId).toBe('branch-123');
+      expect(result.totalEmployees).toBe(1);
+      expect(result.presentEmployees).toBe(1);
+      expect(result.employeeDetails).toHaveLength(1);
+      expect(result.employeeDetails[0].status).toBe('present');
+      expect(result.employeeDetails[0].totalHours).toBe(8);
+    });
+
+    it('should handle employees with only check-in', async () => {
+      const date = new Date('2024-01-15');
+      const checkInRecord = {
+        ...mockAttendanceRecord,
+        eventType: 'CHECK_IN',
+        timestamp: new Date('2024-01-15T09:00:00Z'),
+      };
+
+      attendanceRepository.findMany.mockResolvedValue([checkInRecord] as any);
+
+      const result = await service.getDailyAttendanceReport(date, 'branch-123', mockDataScope);
+
+      expect(result.partialEmployees).toBe(1);
+      expect(result.employeeDetails[0].status).toBe('partial');
+    });
+  });
+
+  describe('getWeeklyAttendanceReport', () => {
+    it('should generate weekly attendance report', async () => {
+      const startDate = new Date('2024-01-15');
+
+      // Mock the getDailyAttendanceReport method
+      jest.spyOn(service, 'getDailyAttendanceReport').mockResolvedValue({
+        date: new Date('2024-01-15'),
+        branchId: 'branch-123',
+        totalEmployees: 10,
+        presentEmployees: 8,
+        partialEmployees: 1,
+        absentEmployees: 1,
+        totalHours: 64,
+        averageHours: 8,
+        employeeDetails: [],
+      });
+
+      const result = await service.getWeeklyAttendanceReport(startDate, 'branch-123', mockDataScope);
+
+      expect(result.startDate).toEqual(startDate);
+      expect(result.branchId).toBe('branch-123');
+      expect(result.dailyReports).toHaveLength(7);
+      expect(result.totalHours).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getMonthlyAttendanceReport', () => {
+    it('should generate monthly attendance report', async () => {
+      const year = 2024;
+      const month = 1;
+      const attendanceRecords = [
+        {
+          ...mockAttendanceRecord,
+          timestamp: new Date('2024-01-15T09:00:00Z'),
+        },
+        {
+          ...mockAttendanceRecord,
+          id: 'attendance-124',
+          timestamp: new Date('2024-01-16T09:00:00Z'),
+        },
+      ];
+
+      attendanceRepository.findMany.mockResolvedValue(attendanceRecords as any);
+
+      const result = await service.getMonthlyAttendanceReport(year, month, 'branch-123', mockDataScope);
+
+      expect(result.year).toBe(year);
+      expect(result.month).toBe(month);
+      expect(result.branchId).toBe('branch-123');
+      expect(result.totalEmployees).toBe(1);
+      expect(result.employeeReports).toHaveLength(1);
+    });
+  });
+});

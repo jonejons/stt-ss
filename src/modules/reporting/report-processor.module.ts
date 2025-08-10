@@ -24,4 +24,3 @@ import { AdapterModule } from '../../shared/adapters/adapter.module';
   exports: [ReportGenerationProcessor],
 })
 export class ReportProcessorModule {}
-"

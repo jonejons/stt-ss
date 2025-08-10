@@ -217,4 +217,3 @@ export class AuditLogInterceptor implements NestInterceptor {
     return redactSensitiveData(sanitized);
   }
 }
-"

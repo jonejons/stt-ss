@@ -198,4 +198,3 @@ export class SecurityAuditReportParamsDto {
   @IsOptional()
   includeDetails?: boolean;
 }
-"
