@@ -9,3 +9,4 @@ export * from './event.dto';
 export * from './attendance.dto';
 export * from './guest.dto';
 export * from './audit-log.dto';
+export * from './report.dto';

@@ -20,6 +20,8 @@ import { EventModule } from '../modules/events/event.module';
 import { AttendanceModule } from '../modules/attendance/attendance.module';
 import { GuestModule } from '../modules/guest/guest.module';
 import { AuditModule } from '../modules/audit/audit.module';
+import { ReportingModule } from '../modules/reporting/reporting.module';
+import { ReportProcessorModule } from '../modules/reporting/report-processor.module';
 import { CorrelationIdMiddleware } from '../shared/middleware/correlation-id.middleware';
 import { LoggingInterceptor } from '../shared/interceptors/logging.interceptor';
 import { AuditLogInterceptor } from '../shared/interceptors/audit-log.interceptor';
@@ -46,6 +48,8 @@ import { JwtAuthGuard, DataScopeGuard, RolesGuard } from '../shared/guards';
     AttendanceModule,
     GuestModule,
     AuditModule,
+    ReportingModule,
+    ReportProcessorModule,
   ],
   controllers: [AppController],
   providers: [

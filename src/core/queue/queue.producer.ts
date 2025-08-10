@@ -35,6 +35,15 @@ export interface ExportData extends QueueJobData {
   };
 }
 
+export interface ReportGenerationData extends QueueJobData {
+  reportId: string;
+  type: string;
+  format: string;
+  parameters: Record<string, any>;
+  organizationId: string;
+  userId: string;
+}
+
 export interface SystemHealthData extends QueueJobData {
   checkType: 'database' | 'redis' | 'external-api' | 'disk-space' | 'memory';
   threshold?: number;
@@ -109,7 +118,7 @@ export class QueueProducer {
    * Generate report
    */
   async generateReport(
-    data: ExportData,
+    data: ReportGenerationData,
     options?: QueueJobOptions,
   ) {
     return this.queueService.addExportJob('generate-report', data, {
