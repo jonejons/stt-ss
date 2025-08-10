@@ -100,10 +100,9 @@ export class ReportingService {
     }
 
     // Generate presigned URL for download
-    const downloadUrl = await this.storageAdapter.getPresignedUrl(
+    const downloadUrl = await this.storageAdapter.generatePresignedDownloadUrl(
       report.filePath,
-      'GET',
-      3600, // 1 hour expiry
+      { expiresIn: 3600 }, // 1 hour expiry
     );
 
     return {

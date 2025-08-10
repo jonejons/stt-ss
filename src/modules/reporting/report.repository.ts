@@ -16,6 +16,7 @@ export interface CreateReportData {
 
 export interface UpdateReportData {
   status?: string;
+  startedAt?: Date;
   completedAt?: Date;
   errorMessage?: string;
   fileUrl?: string;
@@ -141,6 +142,7 @@ export class ReportRepository {
     const updateData: any = {};
     
     if (data.status !== undefined) updateData.status = data.status;
+    if (data.startedAt !== undefined) updateData.startedAt = data.startedAt;
     if (data.completedAt !== undefined) updateData.completedAt = data.completedAt;
     if (data.errorMessage !== undefined) updateData.errorMessage = data.errorMessage;
     if (data.fileUrl !== undefined) updateData.fileUrl = data.fileUrl;

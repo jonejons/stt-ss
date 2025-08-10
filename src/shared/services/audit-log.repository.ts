@@ -26,7 +26,7 @@ export interface CreateAuditLogData {
 
 @Injectable()
 export class AuditLogRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(data: CreateAuditLogData) {
     return this.prisma.auditLog.create({
@@ -55,7 +55,7 @@ export class AuditLogRepository {
 
   async findById(id: string, scope: DataScope) {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     return this.prisma.auditLog.findFirst({
       where: {
         id,
@@ -90,7 +90,7 @@ export class AuditLogRepository {
     } = { page: 1, limit: 50 },
   ) {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     const where: any = {
       ...whereClause,
     };
@@ -163,7 +163,7 @@ export class AuditLogRepository {
     scope: DataScope,
   ) {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     const where: any = {
       ...whereClause,
     };
@@ -187,7 +187,7 @@ export class AuditLogRepository {
     ] = await Promise.all([
       // Total audit logs
       this.prisma.auditLog.count({ where }),
-      
+
       // Logs grouped by action
       this.prisma.auditLog.groupBy({
         by: ['action'],
@@ -202,7 +202,7 @@ export class AuditLogRepository {
         },
         take: 10,
       }),
-      
+
       // Logs grouped by resource
       this.prisma.auditLog.groupBy({
         by: ['resource'],
@@ -217,7 +217,7 @@ export class AuditLogRepository {
         },
         take: 10,
       }),
-      
+
       // Logs grouped by status
       this.prisma.auditLog.groupBy({
         by: ['status'],
@@ -231,7 +231,7 @@ export class AuditLogRepository {
           },
         },
       }),
-      
+
       // Logs grouped by user
       this.prisma.auditLog.groupBy({
         by: ['userId'],
@@ -294,7 +294,7 @@ export class AuditLogRepository {
     scope: DataScope,
   ): Promise<Array<{ date: string; count: number }>> {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     const logs = await this.prisma.auditLog.findMany({
       where: {
         timestamp: {
@@ -349,7 +349,7 @@ export class AuditLogRepository {
     limit: number = 100,
   ) {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     return this.prisma.auditLog.findMany({
       where: {
         status: 'FAILED',
@@ -380,7 +380,7 @@ export class AuditLogRepository {
     scope: DataScope,
   ) {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     return this.prisma.auditLog.findMany({
       where: {
         userId,
@@ -404,7 +404,7 @@ export class AuditLogRepository {
     limit: number = 50,
   ) {
     const whereClause = QueryBuilder.buildOrganizationScope(scope);
-    
+
     return this.prisma.auditLog.findMany({
       where: {
         resource,

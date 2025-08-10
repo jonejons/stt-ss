@@ -19,12 +19,12 @@ import { DeviceModule } from '../modules/device/device.module';
 import { EventModule } from '../modules/events/event.module';
 import { AttendanceModule } from '../modules/attendance/attendance.module';
 import { GuestModule } from '../modules/guest/guest.module';
-import { AuditModule } from '../modules/audit/audit.module';
-import { ReportingModule } from '../modules/reporting/reporting.module';
-import { ReportProcessorModule } from '../modules/reporting/report-processor.module';
+// import { AuditModule } from '../modules/audit/audit.module';
+// import { ReportingModule } from '../modules/reporting/reporting.module';
+// import { ReportProcessorModule } from '../modules/reporting/report-processor.module';
 import { CorrelationIdMiddleware } from '../shared/middleware/correlation-id.middleware';
 import { LoggingInterceptor } from '../shared/interceptors/logging.interceptor';
-import { AuditLogInterceptor } from '../shared/interceptors/audit-log.interceptor';
+// import { AuditLogInterceptor } from '../shared/interceptors/audit-log.interceptor';
 import { GlobalExceptionFilter } from '../shared/filters/global-exception.filter';
 import { JwtAuthGuard, DataScopeGuard, RolesGuard } from '../shared/guards';
 
@@ -47,9 +47,9 @@ import { JwtAuthGuard, DataScopeGuard, RolesGuard } from '../shared/guards';
     EventModule,
     AttendanceModule,
     GuestModule,
-    AuditModule,
-    ReportingModule,
-    ReportProcessorModule,
+    // AuditModule,
+    // ReportingModule,
+    // ReportProcessorModule,
   ],
   controllers: [AppController],
   providers: [
@@ -58,10 +58,10 @@ import { JwtAuthGuard, DataScopeGuard, RolesGuard } from '../shared/guards';
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
     },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: AuditLogInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: AuditLogInterceptor,
+    // },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

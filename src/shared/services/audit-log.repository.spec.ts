@@ -370,7 +370,7 @@ describe('AuditLogRepository', () => {
     it('should return resource access history', async () => {
       const mockResourceLogs = [mockAuditLog];
 
-      prismaService.auditLog.findMany.mockResolvedValue(mockResourceLogs as any);
+      (prismaService.auditLog.findMany as jest.Mock).mockResolvedValue(mockResourceLogs as any);
 
       const result = await repository.getResourceAccessHistory(
         'employee',
