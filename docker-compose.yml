@@ -25,20 +25,41 @@ services:
     networks:
       - sector-staff-network
 
-  minio:
-    image: minio/minio:latest
-    container_name: sector-staff-minio
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: sector-staff-app
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    environment:
+      - NODE_ENV=docker
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sector_staff_v2
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
     networks:
       - sector-staff-network
+    restart: unless-stopped
+
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: sector-staff-minio
+  #   environment:
+  #     MINIO_ROOT_USER: minioadmin
+  #     MINIO_ROOT_PASSWORD: minioadmin
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   volumes:
+  #     - minio_data:/data
+  #   command: server /data --console-address ":9001"
+  #   networks:
+  #     - sector-staff-network
 
 volumes:
   postgres_data:
