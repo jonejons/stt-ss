@@ -55,6 +55,31 @@ enum AttendanceEventType {
   MANUAL_ENTRY
 }
 
+enum ReportType {
+  DAILY_ATTENDANCE
+  WEEKLY_ATTENDANCE
+  MONTHLY_ATTENDANCE
+  EMPLOYEE_LIST
+  DEVICE_STATUS
+  GUEST_VISITS
+  SECURITY_AUDIT
+  CUSTOM_QUERY
+}
+
+enum ReportFormat {
+  CSV
+  PDF
+  EXCEL
+  JSON
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 // 1. Core organization model  
 model Organization {
   id          String   @id @default(uuid())
@@ -69,6 +94,7 @@ model Organization {
   devices     Device[]
   guestVisits GuestVisit[]
   auditLogs   AuditLog[]
+  reports     Report[]
 }
 
 // 2. Users and their roles  
@@ -83,6 +109,7 @@ model User {
 
   organizationLinks OrganizationUser[]
   auditLogs         AuditLog[]
+  reports           Report[]
 }
 
 model OrganizationUser {
@@ -287,16 +314,63 @@ model AuditLog {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  action   String // e.g.: "CREATE_EMPLOYEE"  
-  entity   String // "Employee"  
-  entityId String?
-  oldValue Json?
-  newValue Json?
+  action     String // e.g.: "CREATE_EMPLOYEE"  
+  resource   String // "Employee"  
+  resourceId String?
+  method     String
+  url        String
+  userAgent  String?
+  ipAddress  String?
+  
+  requestData  Json?
+  responseData Json?
+  status       String
+  duration     Int
+  timestamp    DateTime
+  
+  errorMessage String?
+  errorStack   String?
+  oldValues    Json?
+  newValues    Json?
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([organizationId, userId, createdAt])
+  @@index([organizationId, userId, timestamp])
+  @@index([resource, resourceId])
+  @@index([status, timestamp])
+}
+
+// 10. Reports
+model Report {
+  id             String       @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  name        String
+  type        ReportType
+  format      ReportFormat @default(CSV)
+  status      ReportStatus @default(PENDING)
+  parameters  Json?
+
+  createdByUser   User   @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdByUserId String
+
+  fileUrl     String?
+  filePath    String?
+  fileSize    Int?
+  recordCount Int?
+
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, type, status])
+  @@index([createdByUserId, createdAt])
 }
